@@ -10,15 +10,15 @@ type ProductListItemProps = {
 }
 const ProductListItem = ({product}: ProductListItemProps) => {
     const segments = useSegments();
-  return(
-    <Link href={`/${segments[0]}/menu/${product.id}`} asChild>
-  <Pressable style={styles.container}>
-    <Image source={{ uri: product.image || defaultPizzaImage }} style={styles.image} />
-    <Text style={styles.title}>{product.name}</Text>
-    <Text style={styles.price}>${product.price}</Text>
-  </Pressable>
-  </Link>
-  )
+    return(
+        <Link href={`/${segments[0]}/menu/${product.id}`} asChild>
+            <Pressable style={styles.container}>
+                <Image source={{ uri: product.image || defaultPizzaImage }} style={styles.image} />
+                <Text style={styles.title}>{product.name}</Text>
+                <Text style={styles.price}>${product.price}</Text>
+            </Pressable>
+        </Link>
+    )
 }
 
 export default ProductListItem;
