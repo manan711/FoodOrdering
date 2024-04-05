@@ -1,15 +1,18 @@
-import { Image, Keyboard, Pressable, StyleSheet, Text, TextInput } from 'react-native'
+import { Alert, Image, Keyboard, Pressable, StyleSheet, Text, TextInput } from 'react-native'
 import React, { useState } from 'react'
 import Button from '@/components/Button'
 import { defaultPizzaImage } from '@/components/ProductListItem'
 import Colors from '@/constants/Colors'
 import * as ImagePicker from 'expo-image-picker';
-import { Stack } from 'expo-router'
+import { Stack, useLocalSearchParams } from 'expo-router'
 
 const CreateProductScreen = () => {
     const [name, setName] = useState('')
     const [price, setPrice] = useState('')
     const [image, setImage] = useState<string | null>(null)
+
+    const { id } = useLocalSearchParams()
+    const isUpdating = !!id
 
     const resetFields = () => {
         setName('')
@@ -27,6 +30,21 @@ const CreateProductScreen = () => {
         }
         return true
     }
+    const onSubmit = () => {
+        if(isUpdating){
+            onUpdate()
+        }else{
+            onCreate()
+        }
+    }
+    const onUpdate = () => {
+        if(!validateInput()) return
+
+        // API call to update product
+        console.warn('Update Product: ', name, price)
+        resetFields()
+        Keyboard.dismiss()
+    }
 
     const onCreate = () => {
         if(!validateInput()) return
@@ -35,6 +53,17 @@ const CreateProductScreen = () => {
         console.warn('Create Product: ', name, price)
         resetFields()
         Keyboard.dismiss()
+    }
+
+    const onDelete = () => {
+        console.warn('DELETE!!!!!')
+    }
+
+    const confirmDelete = () => {
+        Alert.alert('Delete Product', 'Are you sure you want to delete this product?', [
+            {text: 'Cancel', style: 'cancel'},
+            {text: 'Delete', style: 'destructive', onPress: onDelete},
+        ])
     }
 
     const pickImage = async () => {
@@ -55,7 +84,7 @@ const CreateProductScreen = () => {
 
   return (
     <Pressable style={styles.container} onPress={() => Keyboard.dismiss()}>
-        <Stack.Screen options={{title: 'Create Product'}} />
+        <Stack.Screen options={{title: isUpdating ? 'Update Product' : 'Create Product'}} />
         <Image source={{uri: image || defaultPizzaImage}} style={styles.image} />
         <Text onPress={pickImage} style={styles.textBtn}>Select Image</Text>
       <Text style={styles.label}>Name</Text>
@@ -64,7 +93,8 @@ const CreateProductScreen = () => {
       <Text style={styles.label}>Price ($)</Text>
       <TextInput placeholder='9.99' style={styles.input} keyboardType='numeric' value={price} onChangeText={setPrice}/>
 
-      <Button text='Create' onPress={onCreate} />
+      <Button text={isUpdating? 'Update' : 'Create'} onPress={onSubmit} />
+      {isUpdating && <Text onPress={confirmDelete} style={styles.textBtn}>Delete</Text>}
     </Pressable>
   )
 }
