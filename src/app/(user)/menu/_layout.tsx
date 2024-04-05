@@ -21,6 +21,5 @@ export default function MenuStack() {
           ),
     }}>
         <Stack.Screen name="index" options={{title: 'Menu'}} />
-        {/* <Stack.Screen name="menu" /> */}
     </Stack>)
 }
