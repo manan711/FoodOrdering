@@ -1,18 +1,37 @@
-import { Alert, Image, Keyboard, Pressable, StyleSheet, Text, TextInput } from 'react-native'
-import React, { useState } from 'react'
+import { ActivityIndicator, Alert, Image, Keyboard, Pressable, StyleSheet, Text, TextInput } from 'react-native'
+import React, { useEffect, useState } from 'react'
 import Button from '@/components/Button'
 import { defaultPizzaImage } from '@/components/ProductListItem'
 import Colors from '@/constants/Colors'
 import * as ImagePicker from 'expo-image-picker';
-import { Stack, useLocalSearchParams } from 'expo-router'
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
+import { useDeleteProduct, useInsertProduct, useProduct, useUpdateProduct } from '@/api/products'
+import { View } from '@/components/Themed'
 
 const CreateProductScreen = () => {
     const [name, setName] = useState('')
     const [price, setPrice] = useState('')
     const [image, setImage] = useState<string | null>(null)
+    const [isLoading, setIsLoading] = useState(false)
 
-    const { id } = useLocalSearchParams()
-    const isUpdating = !!id
+    const { id: idString } = useLocalSearchParams()
+    const id = parseFloat(typeof idString === 'string' ? idString : idString?.[0]).toString();
+    const isUpdating = !!idString
+
+    const { mutate: insertProduct } = useInsertProduct();
+    const { mutate: updateProduct } = useUpdateProduct();
+    const { data: updatingProduct } = useProduct(id);
+    const { mutate: deleteProduct } = useDeleteProduct();
+
+    const router = useRouter();
+
+    useEffect(() => {
+        if(updatingProduct){
+            setName(updatingProduct.name)
+            setPrice(updatingProduct.price.toString())
+            setImage(updatingProduct.image)
+        }
+    },[updatingProduct])
 
     const resetFields = () => {
         setName('')
@@ -41,8 +60,14 @@ const CreateProductScreen = () => {
         if(!validateInput()) return
 
         // API call to update product
-        console.warn('Update Product: ', name, price)
-        resetFields()
+        setIsLoading(true)
+        updateProduct({id, name, price: parseFloat(price), image},{
+            onSuccess: () => {
+                resetFields()
+                router.back()
+                setIsLoading(false)
+            }
+        })
         Keyboard.dismiss()
     }
 
@@ -50,13 +75,27 @@ const CreateProductScreen = () => {
         if(!validateInput()) return
         
         // API call to create product
-        console.warn('Create Product: ', name, price)
-        resetFields()
+        setIsLoading(true)
+        insertProduct({name, price: parseFloat(price), image},{
+            onSuccess: () => {
+                resetFields()
+                router.back()
+                setIsLoading(false)
+            }
+        })
         Keyboard.dismiss()
     }
 
     const onDelete = () => {
-        console.warn('DELETE!!!!!')
+        setIsLoading(true)
+        deleteProduct(id, {
+            onSuccess: () => {
+                resetFields()
+                router.replace('/(admin)/menu');
+                setIsLoading(false)
+            }
+        
+        })
     }
 
     const confirmDelete = () => {
@@ -82,6 +121,13 @@ const CreateProductScreen = () => {
         }
       };
 
+      if(isLoading){
+        return (
+        <View style={styles.loading}>
+          <ActivityIndicator  size="large"/>
+        </View>
+        )}
+
   return (
     <Pressable style={styles.container} onPress={() => Keyboard.dismiss()}>
         <Stack.Screen options={{title: isUpdating ? 'Update Product' : 'Create Product'}} />
@@ -106,6 +152,11 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         padding: 10,
+    },
+    loading:{
+        flex: 1,
+        alignContent: 'center',
+        justifyContent: 'center',
     },
     label: {
         fontSize: 16,
