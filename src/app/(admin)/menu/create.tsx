@@ -4,9 +4,13 @@ import Button from '@/components/Button'
 import { defaultPizzaImage } from '@/components/ProductListItem'
 import Colors from '@/constants/Colors'
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
 import { useDeleteProduct, useInsertProduct, useProduct, useUpdateProduct } from '@/api/products'
 import { View } from '@/components/Themed'
+import { randomUUID } from 'expo-crypto'
+import { supabase } from '@/lib/supabase'
+import { decode } from 'base64-arraybuffer'
 
 const CreateProductScreen = () => {
     const [name, setName] = useState('')
@@ -71,12 +75,14 @@ const CreateProductScreen = () => {
         Keyboard.dismiss()
     }
 
-    const onCreate = () => {
+    const onCreate = async () => {
         if(!validateInput()) return
-        
         // API call to create product
         setIsLoading(true)
-        insertProduct({name, price: parseFloat(price), image},{
+        
+        const imagePath = await uploadImage()
+
+        insertProduct({name, price: parseFloat(price), image: imagePath},{
             onSuccess: () => {
                 resetFields()
                 router.back()
@@ -127,6 +133,25 @@ const CreateProductScreen = () => {
           <ActivityIndicator  size="large"/>
         </View>
         )}
+
+        const uploadImage = async () => {
+            if (!image?.startsWith('file://')) {
+              return;
+            }
+          
+            const base64 = await FileSystem.readAsStringAsync(image, {
+              encoding: 'base64',
+            });
+            const filePath = `${randomUUID()}.png`;
+            const contentType = 'image/png';
+            const { data } = await supabase.storage
+              .from('product-images')
+              .upload(filePath, decode(base64), { contentType });
+          
+            if (data) {
+              return data.path;
+            }
+          };
 
   return (
     <Pressable style={styles.container} onPress={() => Keyboard.dismiss()}>
