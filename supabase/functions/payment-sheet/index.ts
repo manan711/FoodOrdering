@@ -7,6 +7,7 @@ import { stripe } from "../_utils/stripe.ts"
 console.log("Hello from Functions!")
 
 Deno.serve(async (req) => {
+  try {
   const { amount } = await req.json()
 
   const paymentIntent = await stripe.paymentIntents.create({
@@ -23,11 +24,17 @@ Deno.serve(async (req) => {
   //   message: `Hello ${name}!`,
   // }
 
-  return new Response(
-    JSON.stringify(res),
-    { headers: { "Content-Type": "application/json" } },
-  )
-})
+  return new Response(JSON.stringify(res), {
+    headers: { 'Content-Type': 'application/json' },
+  });
+} catch (error) {
+  console.log(error);
+  return new Response(JSON.stringify(error), {
+    headers: { 'Content-Type': 'application/json' },
+    status: 400,
+  });
+}
+});
 
 /* To invoke locally:
 
@@ -36,6 +43,12 @@ Deno.serve(async (req) => {
 
   curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/payment-sheet' \
     --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0' \
+    --header 'Content-Type: application/json' \
+    --data '{"amount":"1150"}'
+
+
+    curl -i --location --request POST 'https://bmcrtkvlwypwagziqayx.supabase.co/functions/v1/payment-sheet' \
+    --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJtY3J0a3Zsd3lwd2FnemlxYXl4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTIzNTI2NzgsImV4cCI6MjAyNzkyODY3OH0.xCHMmBEuru4awWJJzB4HiSTsHxI1uyPwy_oONEZVtAU' \
     --header 'Content-Type: application/json' \
     --data '{"amount":"1150"}'
 
