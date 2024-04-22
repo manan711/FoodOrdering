@@ -57,6 +57,12 @@ const CartProvider = ({children}: PropsWithChildren) => {
 
     const checkout = async () => {
 
+        if(items.length === 0){
+            console.warn('No items in cart');
+            router.back();
+            return;
+        }
+
         await initialisePayment(Math.floor(total * 100))
 
         insertOrder({total},
