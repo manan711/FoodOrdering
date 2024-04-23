@@ -4,7 +4,7 @@ import {randomUUID} from 'expo-crypto'
 import { useInsertOrder } from "@/api/orders";
 import { useRouter } from "expo-router";
 import { useInsertOrderItems } from "@/api/order-items";
-import { initialisePayment } from "@/lib/stripe";
+import { initialisePaymentSheet, openPaymentSheet } from "@/lib/stripe";
 
 type Product = Tables<'products'>
 
@@ -54,17 +54,18 @@ const CartProvider = ({children}: PropsWithChildren) => {
 
     // total
     const total = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0)
-
+    
     const checkout = async () => {
-
         if(items.length === 0){
             console.warn('No items in cart');
             router.back();
             return;
         }
-
-        await initialisePayment(Math.floor(total * 100))
-
+        await initialisePaymentSheet(Math.floor(total * 100));
+        const payed = await openPaymentSheet();
+        if (!payed) {
+            return;
+        }
         insertOrder({total},
             {
             onSuccess: (data) => {
